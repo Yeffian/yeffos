@@ -6,6 +6,9 @@
 
 use core::panic::PanicInfo;
 
+// The message to display on the screen.
+static MESSAGE: &[u8] = b"Hello World!";
+
 // This function is called on panic.
 // Since this function can never return, it returns the "never" type: !.
 #[panic_handler]
@@ -18,5 +21,18 @@ fn panic(_panic_info: &PanicInfo) -> ! {
 // We are overwriting the OS entry point with our own.
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    // Reference to VGA Buffer.
+    // Casting 0xb000 to a raw pointer.
+    let vga_buffer = 0xb8000 as *mut u8;
+
+    // Loop through the bytes of the static MESSAGE byte string.
+    for (i, &b) in MESSAGE.iter().enumerate() {
+        // Use the unsafe block to bypass all of Rust's memory saftey features.
+        unsafe {
+            *vga_buffer.offset(i as isize * 2) = b; // Write the string byte.
+            *vga_buffer.offset(i as isize * 2 + 1) = 0xb; // Write the colour byte.
+        }
+    }
+
     loop {}
 }
